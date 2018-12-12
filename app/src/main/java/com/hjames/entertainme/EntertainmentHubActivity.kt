@@ -4,10 +4,13 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import com.hjames.entertainme.adapters.EntertainmentAdapter
 import com.hjames.entertainme.controllers.EntertainmentHubActivityController
+import co.metalab.asyncawait.async
 
 class EntertainmentHubActivity : AppCompatActivity() {
+    private var tag = this.javaClass.name
     private lateinit var controller: EntertainmentHubActivityController
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
@@ -24,7 +27,7 @@ class EntertainmentHubActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         viewManager = LinearLayoutManager(this)
-        viewAdapter = EntertainmentAdapter(getAnimeList().toTypedArray())
+        viewAdapter = EntertainmentAdapter(getAnimeListAsync().toTypedArray())
 
         recyclerView = findViewById<RecyclerView>(R.id.anime_recycler_view).apply {
             setHasFixedSize(true)
@@ -35,7 +38,19 @@ class EntertainmentHubActivity : AppCompatActivity() {
         }
     }
 
-    private fun getAnimeList(): List<String> {
-        return controller.getAnimeList()
+    private fun getAnimeListAsync(): List<String> {
+        val animeList = mutableListOf<String>()
+
+        async {
+            try {
+                val result = await { controller.getAnimeList() }
+            } catch (ex: Exception) {
+                Log.e(tag, "ERROR -> " + ex.message)
+            }
+        }.onError {
+            Log.e(tag, "An error occurred while trying to call the requested API!")
+        }
+
+        return animeList
     }
 }
